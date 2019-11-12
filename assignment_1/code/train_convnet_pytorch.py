@@ -74,6 +74,10 @@ def train():
   cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
 
   mlp = ConvNet(n_channels=3, n_classes=10)
+
+  if FLAGS.cuda:
+    mlp.model.cuda()
+
   loss_fn = CrossEntropyLoss()
   optimiser = Adam(mlp.model.parameters(), lr=FLAGS.learning_rate)
 
@@ -87,6 +91,10 @@ def train():
     x = torch.tensor(x)
     y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
     
+    if FLAGS.cuda:
+      x.cuda()
+      y.cuda()
+
     out = mlp.forward(x)
     loss = loss_fn(out, y)
     optimiser.zero_grad()
@@ -105,6 +113,10 @@ def train():
         x, y = cifar10['test'].next_batch(FLAGS.batch_size * 50)
         x = torch.tensor(x)
         y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+
+        if FLAGS.cuda:
+          x.cuda()
+          y.cuda()
         
         out = mlp.forward(x)
         loss = loss_fn(out, y)
@@ -161,6 +173,8 @@ if __name__ == '__main__':
                         help='Frequency of evaluation on the test set')
   parser.add_argument('--data_dir', type = str, default = DATA_DIR_DEFAULT,
                       help='Directory for storing input data')
+  parser.add_argument('-cuda', action="store_true"
+                      help='enable cuda')
   FLAGS, unparsed = parser.parse_known_args()
 
   main()
