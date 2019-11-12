@@ -83,6 +83,8 @@ def train():
 
   accuracies = []
   losses = []
+  train_accs = []
+  train_losses = []
   for i in range(FLAGS.max_steps):
 
     mlp.model.train()
@@ -111,14 +113,14 @@ def train():
 
       with torch.no_grad():
 
-        x, y = cifar10['test'].next_batch(FLAGS.batch_size * 50)
+        x, y = cifar10['test'].next_batch(10000)
         if FLAGS.cuda:
           x = torch.tensor(x).cuda()
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
         else:
           x = torch.tensor(x)
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
-        
+
         out = mlp.forward(x)
         loss = loss_fn(out, y)
         acc = accuracy(out, y)
@@ -126,16 +128,36 @@ def train():
         accuracies.append(acc)
         losses.append(loss)
 
+        x, y = cifar10['train'].next_batch(10000)
+
+        if FLAGS.cuda:
+          x = torch.tensor(x).cuda()
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+        else:
+          x = torch.tensor(x)
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+
+        out = mlp.forward(x)
+        loss = loss_fn(out, y)
+        acc = accuracy(out, y)
+
+        train_accs.append(acc)
+        train_losses.append(loss)
+
       print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
 
-
-  #plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies)
-  #plt.xlabel("iteration")
-  #plt.ylabel("accuracy")
-  #plt.savefig("conv-accuracy-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
-  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), losses)
+  plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies, label="test accuracy")
+  plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), train_accs, label="train accuracy")
+  plt.xlabel("iteration")
+  plt.ylabel("accuracy")
+  plt.legend()
+  plt.savefig("conv-accuracy-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
+  plt.clf()
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), losses, label="test loss")
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), train_losses, label="train loss")
   plt.xlabel("iteration")
   plt.ylabel("loss")
+  plt.legend()
   plt.savefig("conv-loss-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
   ########################
   # END OF YOUR CODE    #

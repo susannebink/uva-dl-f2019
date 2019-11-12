@@ -12,6 +12,7 @@ import os
 from mlp_numpy import MLP
 from modules import CrossEntropyModule, LinearModule
 import cifar10_utils
+import matplotlib.pyplot as plt
 
 import torch
 
@@ -91,7 +92,7 @@ def train():
 
   accuracies = []
   losses = []
-  train_accuracies = []
+  train_accs = []
   train_losses = []
 
   for i in range(FLAGS.max_steps):
@@ -118,7 +119,7 @@ def train():
       loss = crs.forward(out, y)
 
       acc = accuracy(out, y)
-      train_accuracies.append(acc)
+      train_accs.append(acc)
       train_losses.append(loss)
 
       print("TRAINING - iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
@@ -133,7 +134,19 @@ def train():
       losses.append(loss)
       print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
 
-
+  plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies, label="test accuracy")
+  plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), train_accs, label="train accuracy")
+  plt.xlabel("iteration")
+  plt.ylabel("accuracy")
+  plt.legend()
+  plt.savefig("np-accuracy-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
+  plt.clf()
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), losses, label="test loss")
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), train_losses, label="train loss")
+  plt.xlabel("iteration")
+  plt.ylabel("loss")
+  plt.legend()
+  plt.savefig("np-loss-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
   ########################
   # END OF YOUR CODE    #
   #######################
