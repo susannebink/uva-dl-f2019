@@ -50,7 +50,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  correct = (np.argmax(predictions.numpy(), axis=1) == targets.numpy()).sum() / targets.shape[0]
+  correct = (np.argmax(predictions.cpu().numpy(), axis=1) == targets.cpu().numpy()).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
