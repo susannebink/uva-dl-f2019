@@ -88,12 +88,13 @@ def train():
     mlp.model.train()
 
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
-    x = torch.tensor(x)
-    y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
     
     if FLAGS.cuda:
-      x.cuda()
-      y.cuda()
+      x = torch.tensor(x).cuda()
+      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+    else:
+      x = torch.tensor(x)
+      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
 
     out = mlp.forward(x)
     loss = loss_fn(out, y)
@@ -111,8 +112,12 @@ def train():
       with torch.no_grad():
 
         x, y = cifar10['test'].next_batch(FLAGS.batch_size * 50)
-        x = torch.tensor(x)
-        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+        if FLAGS.cuda:
+          x = torch.tensor(x).cuda()
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+        else:
+          x = torch.tensor(x)
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
 
         if FLAGS.cuda:
           x.cuda()
