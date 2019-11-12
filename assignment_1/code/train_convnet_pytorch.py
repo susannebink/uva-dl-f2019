@@ -118,10 +118,6 @@ def train():
         else:
           x = torch.tensor(x)
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
-
-        if FLAGS.cuda:
-          x.cuda()
-          y.cuda()
         
         out = mlp.forward(x)
         loss = loss_fn(out, y)
