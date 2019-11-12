@@ -173,7 +173,7 @@ if __name__ == '__main__':
                         help='Frequency of evaluation on the test set')
   parser.add_argument('--data_dir', type = str, default = DATA_DIR_DEFAULT,
                       help='Directory for storing input data')
-  parser.add_argument('-cuda', action="store_true"
+  parser.add_argument('-cuda', action="store_true",
                       help='enable cuda')
   FLAGS, unparsed = parser.parse_known_args()
 
