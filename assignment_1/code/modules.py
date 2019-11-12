@@ -23,15 +23,9 @@ class LinearModule(object):
     Also, initialize gradients with zeros.
     """
     
-    ########################
-    # PUT YOUR CODE HERE  #
-    #######################
-    self.params = {'weight': None, 'bias': None}
+    self.params = {'weight': np.random.normal(0, 0.0001, (out_features, in_features)), 'bias': np.zeros((out_features, 1))}
     self.grads = {'weight': None, 'bias': None}
-    raise NotImplementedError
-    ########################
-    # END OF YOUR CODE    #
-    #######################
+    self.output = np.zeros(out_features)
 
   def forward(self, x):
     """
@@ -47,16 +41,9 @@ class LinearModule(object):
     
     Hint: You can store intermediate variables inside the object. They can be used in backward pass computation.                                                           #
     """
-    
-    ########################
-    # PUT YOUR CODE HERE  #
-    #######################
-    raise NotImplementedError
-    ########################
-    # END OF YOUR CODE    #
-    #######################
-
-    return out
+    self.input = x
+    self.output = self.params['weight'] @ x.T + self.params['bias']
+    return self.output.T
 
   def backward(self, dout):
     """
@@ -71,16 +58,10 @@ class LinearModule(object):
     Implement backward pass of the module. Store gradient of the loss with respect to 
     layer parameters in self.grads['weight'] and self.grads['bias']. 
     """
+    self.grads['weight'] = np.dot(dout.T, self.input)
+    self.grads['bias'] = np.reshape(np.sum(dout.T, axis=1), self.params['bias'].shape)
 
-    ########################
-    # PUT YOUR CODE HERE  #
-    #######################
-    raise NotImplementedError
-    ########################
-    # END OF YOUR CODE    #
-    #######################
-    
-    return dx
+    return np.dot(dout, self.params['weight'])
 
 class LeakyReLUModule(object):
   """
@@ -100,7 +81,9 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    
+    self.neg_slope = neg_slope
+
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -123,7 +106,11 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    
+    self.input = x
+    self.output = np.where(x > 0, x, self.neg_slope * x)
+    out = self.output
+
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -146,7 +133,9 @@ class LeakyReLUModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    
+    dx = np.where(self.input > 0, 1, - self.neg_slope) * dout
+
     ########################
     # END OF YOUR CODE    #
     #######################    
@@ -177,7 +166,12 @@ class SoftMaxModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.input = x
+    b = np.max(x, axis=-1)
+    b = np.reshape(b, (b.shape[0], 1))
+    y = np.exp(x - b)
+    out = y / np.sum(y, axis=-1)[:, None]
+    self.output = out
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -196,10 +190,12 @@ class SoftMaxModule(object):
     Implement backward pass of the module.
     """
 
-    ########################
-    # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    # PUT YOUR CODE HERE  #
+
+    dx = np.zeros(dout.shape)
+    for index, sample in enumerate(dout):
+      dx[index] = np.dot(sample, np.diag(self.output[index]) - np.outer(self.output[index], self.output[index]))
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -227,7 +223,9 @@ class CrossEntropyModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    self.input = x
+    self.output = - np.sum(y * np.log(x))
+    out = self.output
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -250,7 +248,7 @@ class CrossEntropyModule(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    dx = - y / x
     ########################
     # END OF YOUR CODE    #
     #######################

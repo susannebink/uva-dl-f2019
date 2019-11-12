@@ -10,8 +10,10 @@ import argparse
 import numpy as np
 import os
 from mlp_numpy import MLP
-from modules import CrossEntropyModule
+from modules import CrossEntropyModule, LinearModule
 import cifar10_utils
+
+import torch
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '100'
@@ -47,7 +49,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  accuracy = (np.argmax(predictions, axis=1) == np.argmax(targets, axis=1)).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -80,7 +82,58 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+
+  cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  mlp = MLP(3072, dnn_hidden_units, 10, neg_slope)
+  
+  crs = CrossEntropyModule()
+
+  accuracies = []
+  losses = []
+  train_accuracies = []
+  train_losses = []
+
+  for i in range(FLAGS.max_steps):
+
+    x, y = cifar10['train'].next_batch(FLAGS.batch_size)
+    x = np.reshape(x, (FLAGS.batch_size, 3072))
+    
+    out = mlp.forward(x)
+    loss = crs.forward(out, y)
+    dout = crs.backward(out, y)
+
+    mlp.backward(dout)
+
+    for layer in mlp.network:
+      if isinstance(layer, LinearModule):
+        layer.params['weight'] -= FLAGS.learning_rate * (layer.grads['weight'] / FLAGS.batch_size)
+        layer.params['bias'] -= FLAGS.learning_rate * (layer.grads['bias'] / FLAGS.batch_size)
+
+    if not (i % FLAGS.eval_freq):
+
+      x, y = cifar10['train'].next_batch(10000)
+      x = np.reshape(x, (10000, 3072))
+      out = mlp.forward(x)
+      loss = crs.forward(out, y)
+
+      acc = accuracy(out, y)
+      train_accuracies.append(acc)
+      train_losses.append(loss)
+
+      print("TRAINING - iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+
+      x, y = cifar10['test'].next_batch(10000)
+      x = np.reshape(x, (10000, 3072))
+      out = mlp.forward(x)
+      loss = crs.forward(out, y)
+
+      acc = accuracy(out, y)
+      accuracies.append(acc)
+      losses.append(loss)
+      print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+
+
   ########################
   # END OF YOUR CODE    #
   #######################

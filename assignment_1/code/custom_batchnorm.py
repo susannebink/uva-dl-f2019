@@ -37,7 +37,11 @@ class CustomBatchNormAutograd(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
+    self.n_neurons = n_neurons
+    self.eps = eps
 
+    self.gamma = nn.Parameter(torch.ones(n_neurons))
+    self.beta = nn.Parameter(torch.zeros(n_neurons))
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -61,6 +65,11 @@ class CustomBatchNormAutograd(nn.Module):
     # PUT YOUR CODE HERE  #
     #######################
 
+    if input.shape[1] != self.n_neurons:
+      raise ValueError("input is wrong shape")
+
+    norm = (input-input.mean(dim=0))/torch.sqrt(input.var(dim=0)+ self.eps)
+    out = torch.mul(self.gamma, norm) + self.beta
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -114,7 +123,18 @@ class CustomBatchNormManualFunction(torch.autograd.Function):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
+    if input.shape[1] != gamma.shape[0] or input.shape[1] != beta.shape[0]:
+      raise ValueError("input is wrong shape")
 
+    mean = input.mean(dim=0)
+    variance = input.var(dim=0, unbiased=False)
+    inv_var = 1 / torch.sqrt(variance + eps)
+    norm = torch.mul(input-mean, inv_var)
+
+    ctx.save_for_backward(norm, inv_var, gamma)
+
+    out = torch.mul(gamma, norm) + beta
+    
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -142,6 +162,20 @@ class CustomBatchNormManualFunction(torch.autograd.Function):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
+
+    norm, inv_var, gamma = ctx.saved_tensors
+    grad_input = grad_weight = grad_bias = None
+
+    B = grad_output.shape[0]
+    grad_g = grad_output * gamma
+
+    if ctx.needs_input_grad[0]:
+        grad_input = (1. / B) * inv_var * (B * grad_g - grad_g.sum(dim=0) - norm * (grad_g * norm).sum(dim=0))
+    if ctx.needs_input_grad[1]:
+        grad_gamma = (grad_output * norm).sum(0)
+    if ctx.needs_input_grad[2]:
+        grad_beta = grad_output.sum(0)
+
 
     ########################
     # END OF YOUR CODE    #
@@ -181,6 +215,12 @@ class CustomBatchNormManualModule(nn.Module):
     # PUT YOUR CODE HERE  #
     #######################
 
+    self.n_neurons = n_neurons
+    self.eps = eps
+
+    self.gamma = nn.Parameter(torch.ones(n_neurons))
+    self.beta = nn.Parameter(torch.zeros(n_neurons))
+
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -203,6 +243,11 @@ class CustomBatchNormManualModule(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
+    if input.shape[1] != self.n_neurons:
+      raise ValueError("input is wrong shape")
+
+    bf = CustomBatchNormManualFunction()
+    out = bf.apply(input, self.gamma, self.beta, self.eps)
 
     ########################
     # END OF YOUR CODE    #

@@ -6,6 +6,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import torch.nn as nn
+from torch.nn import CrossEntropyLoss
+from torch import Tensor
+from torch.optim import SGD
+
 class MLP(nn.Module):
   """
   This class implements a Multi-layer Perceptron in PyTorch.
@@ -35,10 +40,40 @@ class MLP(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+
+    super(MLP, self).__init__()
+
+    self.n_inputs = n_inputs
+    self.n_hidden = n_hidden
+    self.n_classes = n_classes
+    self.neg_slope = neg_slope
+
+    if n_hidden:
+      hidden_layers = []
+      for in_features, out_features in zip(n_hidden, n_hidden[1:]):
+        hidden_layers += [nn.Linear(in_features, out_features), nn.LeakyReLU(neg_slope)]
+      print(hidden_layers)
+      self.model = nn.Sequential(
+        nn.Linear(n_inputs, n_hidden[0]),
+        nn.LeakyReLU(neg_slope),
+        *hidden_layers,
+        nn.Linear(n_hidden[-1], n_classes)
+      )
+    else:
+      self.model = nn.Sequential(
+        nn.Linear(n_inputs, n_classes)
+      )
+    self.model.apply(self.init_normal)
+    print(self.model)
+
     ########################
     # END OF YOUR CODE    #
     #######################
+
+  def init_normal(self, layer):
+    if type(layer) == nn.Linear:
+      nn.init.normal_(layer.weight, mean=0, std=0.0001)
+      layer.bias.data.fill_(0)
 
   def forward(self, x):
     """
@@ -57,7 +92,7 @@ class MLP(nn.Module):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    out = self.model(x)
     ########################
     # END OF YOUR CODE    #
     #######################

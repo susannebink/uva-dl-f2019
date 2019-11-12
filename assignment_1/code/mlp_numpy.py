@@ -34,13 +34,29 @@ class MLP(object):
     Implement initialization of the network.
     """
 
-    ########################
-    # PUT YOUR CODE HERE  #
-    #######################
-    raise NotImplementedError
-    ########################
-    # END OF YOUR CODE    #
-    #######################
+    self.n_inputs = n_inputs
+    self.n_hidden = n_hidden
+    self.n_classes = n_classes
+    self.neg_slope = neg_slope
+
+    self.network = []
+
+    if self.n_hidden:
+      
+      self.network.append(LinearModule(n_inputs, n_hidden[0]))
+      self.network.append(LeakyReLUModule(neg_slope))
+
+      for i in range(len(n_hidden[1:])):
+        self.network.append(LinearModule(n_hidden[i], n_hidden[i + 1]))
+        self.network.append(LeakyReLUModule(neg_slope))
+
+      self.network.append(LinearModule(n_hidden[-1], n_classes))
+      self.network.append(SoftMaxModule())
+
+    else:
+      self.network.append(LinearModule(n_inputs, n_classes))
+      self.network.append(SoftMaxModule())
+
 
   def forward(self, x):
     """
@@ -59,7 +75,9 @@ class MLP(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    for module in self.network:
+      x = module.forward(x)
+    out = x
     ########################
     # END OF YOUR CODE    #
     #######################
@@ -80,7 +98,8 @@ class MLP(object):
     ########################
     # PUT YOUR CODE HERE  #
     #######################
-    raise NotImplementedError
+    for module in self.network[::-1]:
+      dout = module.backward(dout)
     ########################
     # END OF YOUR CODE    #
     #######################

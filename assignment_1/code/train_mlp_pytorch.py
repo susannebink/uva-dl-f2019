@@ -9,8 +9,11 @@ from __future__ import print_function
 import argparse
 import numpy as np
 import os
-from mlp_pytorch import MLP
+from mlp_pytorch import MLP, CrossEntropyLoss, Tensor, SGD
+import torch
 import cifar10_utils
+import sys
+import matplotlib.pyplot as plt
 
 # Default constants
 DNN_HIDDEN_UNITS_DEFAULT = '100'
@@ -46,12 +49,11 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  correct = (np.argmax(predictions.detach().numpy(), axis=1) == targets.numpy()).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
-
-  return accuracy
+  return correct
 
 def train():
   """
@@ -79,7 +81,50 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  
+  cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  mlp = MLP(3072, dnn_hidden_units, 10, neg_slope)
+  loss_fn = CrossEntropyLoss()
+  optimiser = SGD(mlp.model.parameters(), lr=FLAGS.learning_rate)
+
+  accuracies = []
+  losses = []
+  for i in range(FLAGS.max_steps):
+
+    x, y = cifar10['train'].next_batch(FLAGS.batch_size)
+    x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072)))
+    y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+
+    out = mlp.forward(x)
+    loss = loss_fn(out, y)
+    optimiser.zero_grad()
+    loss.backward()
+    optimiser.step()
+
+    if not (i % FLAGS.eval_freq):
+
+      x, y = cifar10['test'].next_batch(10000)
+      x = torch.tensor(np.reshape(x, (10000, 3072)))
+      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+      out = mlp.forward(x)
+      loss = loss_fn(out, y)
+
+      acc = accuracy(out, y)
+      accuracies.append(acc)
+      losses.append(loss)
+
+      print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+
+
+  plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies)
+  plt.xlabel("iteration")
+  plt.ylabel("accuracy")
+  plt.savefig("pytorch-accuracy-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), losses)
+  plt.xlabel("iteration")
+  plt.ylabel("loss")
+  plt.savefig("pytorch-loss-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
   ########################
   # END OF YOUR CODE    #
   #######################

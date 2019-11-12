@@ -10,7 +10,12 @@ import argparse
 import numpy as np
 import os
 from convnet_pytorch import ConvNet
+from torch.nn import CrossEntropyLoss
+import torch
+from torch.optim import Adam
 import cifar10_utils
+import math
+import matplotlib.pyplot as plt
 
 # Default constants
 LEARNING_RATE_DEFAULT = 1e-4
@@ -45,12 +50,12 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  correct = (np.argmax(predictions.numpy(), axis=1) == targets.numpy()).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
 
-  return accuracy
+  return correct
 
 def train():
   """
@@ -63,11 +68,62 @@ def train():
   ### DO NOT CHANGE SEEDS!
   # Set the random seeds for reproducibility
   np.random.seed(42)
-
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  raise NotImplementedError
+  cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
+
+  mlp = ConvNet(n_channels=3, n_classes=10)
+  loss_fn = CrossEntropyLoss()
+  optimiser = Adam(mlp.model.parameters(), lr=FLAGS.learning_rate)
+
+  accuracies = []
+  losses = []
+  for i in range(FLAGS.max_steps):
+
+    mlp.model.train()
+
+    x, y = cifar10['train'].next_batch(FLAGS.batch_size)
+    x = torch.tensor(x)
+    y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+    
+    out = mlp.forward(x)
+    loss = loss_fn(out, y)
+    optimiser.zero_grad()
+    loss.backward()
+    optimiser.step()
+
+    print("train {} of {} loss {}".format(i, FLAGS.max_steps, loss))
+
+    if not (i % FLAGS.eval_freq):
+
+      mlp.model.eval()
+      print("evaluating...")
+
+      with torch.no_grad():
+
+        x, y = cifar10['test'].next_batch(FLAGS.batch_size * 50)
+        x = torch.tensor(x)
+        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+        
+        out = mlp.forward(x)
+        loss = loss_fn(out, y)
+        acc = accuracy(out, y)
+
+        accuracies.append(acc)
+        losses.append(loss)
+
+      print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+
+
+  #plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies)
+  #plt.xlabel("iteration")
+  #plt.ylabel("accuracy")
+  #plt.savefig("conv-accuracy-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
+  plt.plot(np.linspace(0, FLAGS.max_steps/ FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), losses)
+  plt.xlabel("iteration")
+  plt.ylabel("loss")
+  plt.savefig("conv-loss-{}-{}-{}.png".format(FLAGS.max_steps, FLAGS.learning_rate, FLAGS.batch_size))
   ########################
   # END OF YOUR CODE    #
   #######################
