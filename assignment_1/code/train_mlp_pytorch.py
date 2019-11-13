@@ -49,7 +49,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  correct = (np.argmax(predictions.cpu().detach().numpy(), axis=1) == targets.cpu().numpy()).sum() / targets.shape[0]
+  correct = (np.argmax(predictions.cpu().numpy(), axis=1) == targets.cpu().numpy()).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -96,6 +96,8 @@ def train():
   train_losses = []
   for i in range(FLAGS.max_steps):
 
+    mlp.model.train()
+
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
     if FLAGS.cuda:
       x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072))).cuda()
@@ -112,36 +114,40 @@ def train():
 
     if not (i % FLAGS.eval_freq):
 
-      x, y = cifar10['test'].next_batch(10000)
-      if FLAGS.cuda:
-        x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
-        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
-      else:
-        x = torch.tensor(np.reshape(x, (10000, 3072)))
-        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+      mlp.model.eval()
+
+      with torch.no_grad():
+
+        x, y = cifar10['test'].next_batch(10000)
+        if FLAGS.cuda:
+          x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+        else:
+          x = torch.tensor(np.reshape(x, (10000, 3072)))
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
       
-      out = mlp.forward(x)
-      loss = loss_fn(out, y)
+        out = mlp.forward(x)
+        loss = loss_fn(out, y)
 
-      acc = accuracy(out, y)
-      accuracies.append(acc)
-      losses.append(loss)
+        acc = accuracy(out, y)
+        accuracies.append(acc)
+        losses.append(loss)
 
-      x, y = cifar10['train'].next_batch(10000)
-      if FLAGS.cuda:
-        x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
-        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
-      else:
-        x = torch.tensor(np.reshape(x, (10000, 3072)))
-        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
-      out = mlp.forward(x)
-      loss = loss_fn(out, y)
+        x, y = cifar10['train'].next_batch(10000)
+        if FLAGS.cuda:
+          x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+        else:
+          x = torch.tensor(np.reshape(x, (10000, 3072)))
+          y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+        out = mlp.forward(x)
+        loss = loss_fn(out, y)
 
-      acc = accuracy(out, y)
-      train_accs.append(acc)
-      train_losses.append(loss)
+        acc = accuracy(out, y)
+        train_accs.append(acc)
+        train_losses.append(loss)
 
-      print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+        print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
 
 
   plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies, label="test accuracy")
