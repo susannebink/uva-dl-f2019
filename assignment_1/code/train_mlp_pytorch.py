@@ -9,7 +9,7 @@ from __future__ import print_function
 import argparse
 import numpy as np
 import os
-from mlp_pytorch import MLP, CrossEntropyLoss, Tensor, SGD
+from mlp_pytorch import MLP, CrossEntropyLoss, Tensor, SGD, Adam
 import torch
 import cifar10_utils
 import sys
@@ -88,7 +88,7 @@ def train():
   if FLAGS.cuda:
     mlp.model.cuda()
   loss_fn = CrossEntropyLoss()
-  optimiser = SGD(mlp.model.parameters(), lr=FLAGS.learning_rate)
+  optimiser = Adam(mlp.model.parameters(), lr=FLAGS.learning_rate)
 
   accuracies = []
   losses = []

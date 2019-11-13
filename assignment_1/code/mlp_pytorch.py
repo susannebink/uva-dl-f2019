@@ -9,7 +9,7 @@ from __future__ import print_function
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 from torch import Tensor
-from torch.optim import SGD
+from torch.optim import SGD, Adam
 
 class MLP(nn.Module):
   """

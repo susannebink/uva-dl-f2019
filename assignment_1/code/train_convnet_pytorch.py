@@ -73,13 +73,13 @@ def train():
   #######################
   cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
 
-  mlp = ConvNet(n_channels=3, n_classes=10)
+  cnet = ConvNet(n_channels=3, n_classes=10)
 
   if FLAGS.cuda:
-    mlp.model.cuda()
+    cnet.model.cuda()
 
   loss_fn = CrossEntropyLoss()
-  optimiser = Adam(mlp.model.parameters(), lr=FLAGS.learning_rate)
+  optimiser = Adam(cnet.model.parameters(), lr=FLAGS.learning_rate)
 
   accuracies = []
   losses = []
@@ -87,7 +87,7 @@ def train():
   train_losses = []
   for i in range(FLAGS.max_steps):
 
-    mlp.model.train()
+    cnet.model.train()
 
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
     
@@ -98,7 +98,7 @@ def train():
       x = torch.tensor(x)
       y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
 
-    out = mlp.forward(x)
+    out = cnet.forward(x)
     loss = loss_fn(out, y)
     optimiser.zero_grad()
     loss.backward()
@@ -108,7 +108,7 @@ def train():
 
     if not (i % FLAGS.eval_freq):
 
-      mlp.model.eval()
+      cnet.model.eval()
       print("evaluating...")
 
       with torch.no_grad():
@@ -121,12 +121,14 @@ def train():
           x = torch.tensor(x)
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
 
-        out = mlp.forward(x)
+        out = cnet.forward(x)
         loss = loss_fn(out, y)
         acc = accuracy(out, y)
 
         accuracies.append(acc)
         losses.append(loss)
+
+        print("iteration: {} accuracy:{} loss: {} <-- TRAIN".format(i, acc, loss))
 
         x, y = cifar10['train'].next_batch(10000)
 
@@ -137,14 +139,14 @@ def train():
           x = torch.tensor(x)
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
 
-        out = mlp.forward(x)
+        out = cnet.forward(x)
         loss = loss_fn(out, y)
         acc = accuracy(out, y)
 
         train_accs.append(acc)
         train_losses.append(loss)
 
-      print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
+        print("iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
 
   plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), accuracies, label="test accuracy")
   plt.plot(np.linspace(0, FLAGS.max_steps / FLAGS.eval_freq, FLAGS.max_steps/ FLAGS.eval_freq), train_accs, label="train accuracy")
