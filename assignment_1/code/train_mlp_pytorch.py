@@ -133,6 +133,8 @@ def train():
         accuracies.append(acc)
         losses.append(loss)
 
+        print("iteration: {} accuracy:{} loss: {} <--- TRAIN".format(i, acc, loss))
+
         x, y = cifar10['train'].next_batch(10000)
         if FLAGS.cuda:
           x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
