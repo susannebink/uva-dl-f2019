@@ -49,7 +49,7 @@ def accuracy(predictions, targets):
   ########################
   # PUT YOUR CODE HERE  #
   #######################
-  correct = (np.argmax(predictions.detach().numpy(), axis=1) == targets.numpy()).sum() / targets.shape[0]
+  correct = (np.argmax(predictions.cpu().detach().numpy(), axis=1) == targets.cpu().numpy()).sum() / targets.shape[0]
   ########################
   # END OF YOUR CODE    #
   #######################
@@ -85,6 +85,8 @@ def train():
   cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
 
   mlp = MLP(3072, dnn_hidden_units, 10, neg_slope)
+  if FLAGS.cuda:
+    mlp.model.cuda()
   loss_fn = CrossEntropyLoss()
   optimiser = SGD(mlp.model.parameters(), lr=FLAGS.learning_rate)
 
@@ -95,9 +97,13 @@ def train():
   for i in range(FLAGS.max_steps):
 
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
-    x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072)))
-    y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
-
+    if FLAGS.cuda:
+      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072))).cuda()
+      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+    else:
+      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072)))
+      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+    
     out = mlp.forward(x)
     loss = loss_fn(out, y)
     optimiser.zero_grad()
@@ -107,8 +113,13 @@ def train():
     if not (i % FLAGS.eval_freq):
 
       x, y = cifar10['test'].next_batch(10000)
-      x = torch.tensor(np.reshape(x, (10000, 3072)))
-      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+      if FLAGS.cuda:
+        x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+      else:
+        x = torch.tensor(np.reshape(x, (10000, 3072)))
+        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+      
       out = mlp.forward(x)
       loss = loss_fn(out, y)
 
@@ -117,8 +128,12 @@ def train():
       losses.append(loss)
 
       x, y = cifar10['train'].next_batch(10000)
-      x = torch.tensor(np.reshape(x, (10000, 3072)))
-      y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
+      if FLAGS.cuda:
+        x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
+      else:
+        x = torch.tensor(np.reshape(x, (10000, 3072)))
+        y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
       out = mlp.forward(x)
       loss = loss_fn(out, y)
 
@@ -183,6 +198,8 @@ if __name__ == '__main__':
                       help='Directory for storing input data')
   parser.add_argument('--neg_slope', type=float, default=NEG_SLOPE_DEFAULT,
                       help='Negative slope parameter for LeakyReLU')
+  parser.add_argument('-cuda', action="store_true",
+                      help='enable cuda')
   FLAGS, unparsed = parser.parse_known_args()
 
   main()

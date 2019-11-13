@@ -116,7 +116,7 @@ def train():
       x, y = cifar10['train'].next_batch(10000)
       x = np.reshape(x, (10000, 3072))
       out = mlp.forward(x)
-      loss = crs.forward(out, y)
+      loss = crs.forward(out, y)  / 10000
 
       acc = accuracy(out, y)
       train_accs.append(acc)
@@ -127,7 +127,7 @@ def train():
       x, y = cifar10['test'].next_batch(10000)
       x = np.reshape(x, (10000, 3072))
       out = mlp.forward(x)
-      loss = crs.forward(out, y)
+      loss = crs.forward(out, y) / 10000
 
       acc = accuracy(out, y)
       accuracies.append(acc)
