@@ -15,7 +15,7 @@ class ConvNet(nn.Module):
   It handles the different layers and parameters of the model.
   Once initialized an ConvNet object can perform forward.
   """
-
+  # Useful for debugging
   class Print(nn.Module):
       def __init__(self):
           super(ConvNet.Print, self).__init__()
@@ -24,6 +24,7 @@ class ConvNet(nn.Module):
           #print(x.shape)
           return x
 
+  # Flatten the output of the conv layers
   class Flatten(nn.Module):
       def __init__(self):
         super(ConvNet.Flatten, self).__init__()

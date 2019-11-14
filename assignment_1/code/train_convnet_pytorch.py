@@ -75,6 +75,9 @@ def train():
 
   cnet = ConvNet(n_channels=3, n_classes=10)
 
+  # TEST BATCH SIZE, DECREASE IF YA PC CANT HANDLE THIS
+  test_batch = 10000
+
   if FLAGS.cuda:
     cnet.model.cuda()
 
@@ -85,6 +88,8 @@ def train():
   losses = []
   train_accs = []
   train_losses = []
+
+  # train the model
   for i in range(FLAGS.max_steps):
 
     cnet.model.train()
@@ -106,6 +111,7 @@ def train():
 
     print("train {} of {} loss {}".format(i, FLAGS.max_steps, loss))
 
+    # Calculate train and test loss and accuracy
     if not (i % FLAGS.eval_freq):
 
       cnet.model.eval()
@@ -113,7 +119,7 @@ def train():
 
       with torch.no_grad():
 
-        x, y = cifar10['test'].next_batch(10000)
+        x, y = cifar10['test'].next_batch(test_batch)
         if FLAGS.cuda:
           x = torch.tensor(x).cuda()
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
@@ -128,9 +134,9 @@ def train():
         accuracies.append(acc)
         losses.append(loss)
 
-        print("iteration: {} accuracy:{} loss: {} <-- TRAIN".format(i, acc, loss))
+        print("iteration: {} accuracy:{} loss: {} <-- TEST".format(i, acc, loss))
 
-        x, y = cifar10['train'].next_batch(10000)
+        x, y = cifar10['train'].next_batch(test_batch)
 
         if FLAGS.cuda:
           x = torch.tensor(x).cuda()

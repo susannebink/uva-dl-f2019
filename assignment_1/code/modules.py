@@ -24,7 +24,7 @@ class LinearModule(object):
     """
     
     self.params = {'weight': np.random.normal(0, 0.0001, (out_features, in_features)), 'bias': np.zeros((out_features, 1))}
-    self.grads = {'weight': None, 'bias': None}
+    self.grads = {'weight': np.zeros((out_features, in_features)), 'bias': np.zeros((out_features, 1))}
     self.output = np.zeros(out_features)
 
   def forward(self, x):
@@ -193,9 +193,9 @@ class SoftMaxModule(object):
     #######################
     # PUT YOUR CODE HERE  #
 
-    dx = np.zeros(dout.shape)
-    for index, sample in enumerate(dout):
-      dx[index] = np.dot(sample, np.diag(self.output[index]) - np.outer(self.output[index], self.output[index]))
+    smderiv = np.apply_along_axis(np.diag, 1, self.output) - self.output[:,:,None] * self.output[:,None]
+    dx = np.einsum('ij,ijk->ik',dout,smderiv)
+
     #######################
     # END OF YOUR CODE    #
     #######################

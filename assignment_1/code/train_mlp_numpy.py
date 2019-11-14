@@ -84,9 +84,13 @@ def train():
   # PUT YOUR CODE HERE  #
   #######################
 
+  image_dim = 32*32*3
+  n_classes = 10
+  test_batch = 10000
+
   cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
 
-  mlp = MLP(3072, dnn_hidden_units, 10, neg_slope)
+  mlp = MLP(image_dim, dnn_hidden_units, n_classes, neg_slope)
   
   crs = CrossEntropyModule()
 
@@ -98,7 +102,7 @@ def train():
   for i in range(FLAGS.max_steps):
 
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
-    x = np.reshape(x, (FLAGS.batch_size, 3072))
+    x = np.reshape(x, (FLAGS.batch_size, image_dim))
     
     out = mlp.forward(x)
     loss = crs.forward(out, y)
@@ -113,10 +117,10 @@ def train():
 
     if not (i % FLAGS.eval_freq):
 
-      x, y = cifar10['train'].next_batch(10000)
-      x = np.reshape(x, (10000, 3072))
+      x, y = cifar10['train'].next_batch(test_batch)
+      x = np.reshape(x, (test_batch, image_dim))
       out = mlp.forward(x)
-      loss = crs.forward(out, y)  / 10000
+      loss = crs.forward(out, y)  / test_batch
 
       acc = accuracy(out, y)
       train_accs.append(acc)
@@ -124,10 +128,10 @@ def train():
 
       print("TRAINING - iteration: {} accuracy:{} loss: {}".format(i, acc, loss))
 
-      x, y = cifar10['test'].next_batch(10000)
-      x = np.reshape(x, (10000, 3072))
+      x, y = cifar10['test'].next_batch(test_batch)
+      x = np.reshape(x, (test_batch, image_dim))
       out = mlp.forward(x)
-      loss = crs.forward(out, y) / 10000
+      loss = crs.forward(out, y) / test_batch
 
       acc = accuracy(out, y)
       accuracies.append(acc)

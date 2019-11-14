@@ -81,14 +81,20 @@ def train():
   ########################
   # PUT YOUR CODE HERE  #
   #######################
+
+  image_dim = 32*32*3
+  n_classes = 10
+  test_batch = 10000
   
   cifar10 = cifar10_utils.get_cifar10(FLAGS.data_dir)
 
-  mlp = MLP(3072, dnn_hidden_units, 10, neg_slope)
+  mlp = MLP(image_dim, dnn_hidden_units, n_classes, neg_slope)
   if FLAGS.cuda:
     mlp.model.cuda()
   loss_fn = CrossEntropyLoss()
-  optimiser = Adam(mlp.model.parameters(), lr=FLAGS.learning_rate)
+
+  # CHOOSE SGD OR Adam OPTIMISER
+  optimiser = SGD(mlp.model.parameters(), lr=FLAGS.learning_rate)
 
   accuracies = []
   losses = []
@@ -100,10 +106,10 @@ def train():
 
     x, y = cifar10['train'].next_batch(FLAGS.batch_size)
     if FLAGS.cuda:
-      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072))).cuda()
+      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, image_dim))).cuda()
       y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
     else:
-      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, 3072)))
+      x = torch.tensor(np.reshape(x, (FLAGS.batch_size, image_dim)))
       y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
     
     out = mlp.forward(x)
@@ -118,12 +124,12 @@ def train():
 
       with torch.no_grad():
 
-        x, y = cifar10['test'].next_batch(10000)
+        x, y = cifar10['test'].next_batch(test_batch)
         if FLAGS.cuda:
-          x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+          x = torch.tensor(np.reshape(x, (test_batch, image_dim))).cuda()
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
         else:
-          x = torch.tensor(np.reshape(x, (10000, 3072)))
+          x = torch.tensor(np.reshape(x, (test_batch, image_dim)))
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
       
         out = mlp.forward(x)
@@ -133,14 +139,14 @@ def train():
         accuracies.append(acc)
         losses.append(loss)
 
-        print("iteration: {} accuracy:{} loss: {} <--- TRAIN".format(i, acc, loss))
+        print("iteration: {} accuracy:{} loss: {} <--- TEST".format(i, acc, loss))
 
-        x, y = cifar10['train'].next_batch(10000)
+        x, y = cifar10['train'].next_batch(test_batch)
         if FLAGS.cuda:
-          x = torch.tensor(np.reshape(x, (10000, 3072))).cuda()
+          x = torch.tensor(np.reshape(x, (test_batch, image_dim))).cuda()
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long).cuda()
         else:
-          x = torch.tensor(np.reshape(x, (10000, 3072)))
+          x = torch.tensor(np.reshape(x, (test_batch, image_dim)))
           y = torch.tensor(np.argmax(y, axis=1), dtype=torch.long)
         out = mlp.forward(x)
         loss = loss_fn(out, y)
